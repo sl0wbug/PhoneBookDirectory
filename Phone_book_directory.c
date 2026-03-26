@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <conio.h>
 
 #define TABLE_SIZE 10
 #define EMPTY ""
