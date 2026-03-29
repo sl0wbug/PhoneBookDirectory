@@ -1,133 +1,86 @@
+# Improved Phone Book Directory
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <conio.h>
 
-#define TABLE_SIZE 10
-#define EMPTY ""
-
+#define MAX_CONTACTS 100
+#define MAX_NAME 50
+#define MAX_PHONE_NUMBERS 5
+#define MAX_PHONE_LENGTH 15
 
 typedef struct {
-    char name[50];
-    char phone[15];
-    int is_deleted;
+    char label[20];
+    char number[MAX_PHONE_LENGTH];
+} PhoneNumber;
+
+typedef struct {
+    char name[MAX_NAME];
+    PhoneNumber phoneNumbers[MAX_PHONE_NUMBERS];
+    int phoneCount;
 } Contact;
 
-Contact hashTable[TABLE_SIZE];
-
-
-int hashFunction(char *key) {
-    int hash = 0;
-    for (int i = 0; key[i] != '\0'; i++) {
-        hash += key[i];
-    }
-    return hash % TABLE_SIZE;
-}
-
-
-void insertContact(char *name, char *phone) {
-    int index = hashFunction(name);
-    int originalIndex = index;
-
-    while (strlen(hashTable[index].name) > 0 && !hashTable[index].is_deleted) {
-        index = (index + 1) % TABLE_SIZE;
-        if (index == originalIndex) {
-            printf("\033[1;31mHash table is full!\033[0m\n");
-            return;
-        }
-    }
-    strcpy(hashTable[index].name, name);
-    strcpy(hashTable[index].phone, phone);
-    hashTable[index].is_deleted = 0;
-    printf("\033[1;32mContact inserted at index %d\033[0m\n", index);
-}
-
-
-void searchContact(char *name) {
-    int index = hashFunction(name);
-    int originalIndex = index;
-
-    while (strlen(hashTable[index].name) > 0) {
-        if (strcmp(hashTable[index].name, name) == 0 && !hashTable[index].is_deleted) {
-            printf("\033[1;34mFound: %s -> %s\033[0m\n", hashTable[index].name, hashTable[index].phone);
-            return;
-        }
-        index = (index + 1) % TABLE_SIZE;
-        if (index == originalIndex) break;
-    }
-    printf("\033[1;31mContact not found!\033[0m\n");
-}
-
-
-void deleteContact(char *name) {
-    int index = hashFunction(name);
-    int originalIndex = index;
-
-    while (strlen(hashTable[index].name) > 0) {
-        if (strcmp(hashTable[index].name, name) == 0 && !hashTable[index].is_deleted) {
-            hashTable[index].is_deleted = 1;
-            printf("\033[1;33mContact deleted!\033[0m\n");
-            return;
-        }
-        index = (index + 1) % TABLE_SIZE;
-        if (index == originalIndex) break;
-    }
-    printf("\033[1;31mContact not found!\033[0m\n");
-}
-
+Contact contacts[MAX_CONTACTS];
+int contactCount = 0;
 
 void displayContacts() {
-    printf("\n\033[1;36mPhonebook Directory:\033[0m\n");
-    for (int i = 0; i < TABLE_SIZE; i++) {
-        if (strlen(hashTable[i].name) > 0 && !hashTable[i].is_deleted) {
-            printf("\033[1;35mIndex %d: %s -> %s\033[0m\n", i, hashTable[i].name, hashTable[i].phone);
+    printf("\n%20s | %s\n", "Name", "Phone Numbers");
+    printf("%s\n", "---------------------");
+    for (int i = 0; i < contactCount; i++) {
+        printf("%20s | ", contacts[i].name);
+        for (int j = 0; j < contacts[i].phoneCount; j++) {
+            printf("[%s: %s] ", contacts[i].phoneNumbers[j].label, contacts[i].phoneNumbers[j].number);
         }
+        printf("\n");
     }
+}
+
+void addContact() {
+    if (contactCount >= MAX_CONTACTS) {
+        printf("Contact list is full!\n");
+        return;
+    }
+    Contact newContact;
+    printf("Enter contact name: ");
+    fgets(newContact.name, MAX_NAME, stdin);
+    newContact.name[strcspn(newContact.name, "\n")] = 0;  // Remove newline
+    newContact.phoneCount = 0;
+
+    while (newContact.phoneCount < MAX_PHONE_NUMBERS) {
+        PhoneNumber newPhone;
+        printf("Enter phone label (or 'done' to finish): ");
+        fgets(newPhone.label, sizeof(newPhone.label), stdin);
+        newPhone.label[strcspn(newPhone.label, "\n")] = 0; // Remove newline
+        if (strcmp(newPhone.label, "done") == 0) break;
+        printf("Enter phone number: ");
+        fgets(newPhone.number, MAX_PHONE_LENGTH, stdin);
+        newPhone.number[strcspn(newPhone.number, "\n")] = 0; // Remove newline
+        newContact.phoneNumbers[newContact.phoneCount++] = newPhone;
+    }
+    contacts[contactCount++] = newContact;
 }
 
 int main() {
     int choice;
-    char name[50], phone[15];
-
-    while (1) {
-        printf("\n\033[1;36m==============================\033[0m\n");
-        printf("\033[1;33m       PHONEBOOK MENU        \033[0m\n");
-        printf("\033[1;36m==============================\033[0m\n");
-        printf("\033[1;32m1. Insert Contact\033[0m\n");
-        printf("\033[1;34m2. Search Contact\033[0m\n");
-        printf("\033[1;33m3. Delete Contact\033[0m\n");
-        printf("\033[1;35m4. Display Contacts\033[0m\n");
-        printf("\033[1;31m5. Exit\033[0m\n");
-        printf("\033[1;36m==============================\033[0m\n");
-        printf("Enter choice: ");
+    do {
+        printf("\n1. Add Contact\n2. Display Contacts\n3. Exit\nChoose an option: ");
         scanf("%d", &choice);
-        getchar();
+        getchar();  // Clear newline from buffer
 
         switch (choice) {
             case 1:
-                printf("Enter name: ");
-                gets(name);
-                printf("Enter phone: ");
-                gets(phone);
-                insertContact(name, phone);
+                addContact();
                 break;
             case 2:
-                printf("Enter name to search: ");
-                gets(name);
-                searchContact(name);
-                break;
-            case 3:
-                printf("Enter name to delete: ");
-                gets(name);
-                deleteContact(name);
-                break;
-            case 4:
                 displayContacts();
                 break;
-            case 5:
-                printf("\033[1;31mExiting program...\033[0m\n");
-                return 0;
+            case 3:
+                printf("Exiting...\n");
+                break;
             default:
-                printf("\033[1;31mInvalid choice!\033[0m\n");
+                printf("Invalid choice. Please try again.\n");
         }
-    }
+    } while (choice != 3);
+
+    return 0;
 }
